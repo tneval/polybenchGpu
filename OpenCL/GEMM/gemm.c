@@ -23,7 +23,7 @@
 #define POLYBENCH_TIME 1
 
 //select the OpenCL device to use (can be GPU, CPU, or Accelerator such as Intel Xeon Phi)
-#define OPENCL_DEVICE_SELECTION CL_DEVICE_TYPE_GPU
+#define OPENCL_DEVICE_SELECTION CL_DEVICE_TYPE_CPU
 
 #include "gemm.h"
 #include "../../common/polybench.h"
@@ -43,7 +43,7 @@
 char str_temp[1024];
 
 cl_platform_id platform_id;
-cl_device_id device_id;   
+cl_device_id device_id;
 cl_uint num_devices;
 cl_uint num_platforms;
 cl_int errcode;
@@ -65,19 +65,19 @@ void compareResults(int ni, int nj, DATA_TYPE POLYBENCH_2D(C,NI,NJ,ni,nj), DATA_
 {
 	int i, j, fail;
 	fail = 0;
-	
+
 	// Compare CPU and GPU outputs
-	for (i=0; i < ni; i++) 
+	for (i=0; i < ni; i++)
 	{
-		for (j=0; j < nj; j++) 
+		for (j=0; j < nj; j++)
 		{
-			if (percentDiff(C[i][j], C_outputFromGpu[i][j]) > PERCENT_DIFF_ERROR_THRESHOLD) 
+			if (percentDiff(C[i][j], C_outputFromGpu[i][j]) > PERCENT_DIFF_ERROR_THRESHOLD)
 			{
 				fail++;
 			}
 		}
 	}
-	
+
 	// Print results
 	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
 }
@@ -97,7 +97,7 @@ void read_cl_file()
 }
 
 
-void init(int ni, int nj, int nk, DATA_TYPE* alpha, DATA_TYPE* beta, DATA_TYPE POLYBENCH_2D(A,NI,NK,ni,nk), 
+void init(int ni, int nj, int nk, DATA_TYPE* alpha, DATA_TYPE* beta, DATA_TYPE POLYBENCH_2D(A,NI,NK,ni,nk),
 	DATA_TYPE POLYBENCH_2D(B,NK,NJ,nk,nj), DATA_TYPE POLYBENCH_2D(C,NI,NJ,ni,nj))
 {
 	int i, j;
@@ -132,7 +132,7 @@ void init(int ni, int nj, int nk, DATA_TYPE* alpha, DATA_TYPE* beta, DATA_TYPE P
 
 
 void cl_initialization()
-{	
+{
 	// Get platform and device information
 	errcode = clGetPlatformIDs(1, &platform_id, &num_platforms);
 	if(errcode == CL_SUCCESS) printf("number of platforms is %d\n",num_platforms);
@@ -153,11 +153,11 @@ void cl_initialization()
 	errcode = clGetDeviceInfo(device_id,CL_DEVICE_NAME, sizeof(str_temp), str_temp,NULL);
 	if(errcode == CL_SUCCESS) printf("device name is %s\n",str_temp);
 	else printf("Error getting device name\n");
-	
+
 	// Create an OpenCL context
 	clGPUContext = clCreateContext( NULL, 1, &device_id, NULL, NULL, &errcode);
 	if(errcode != CL_SUCCESS) printf("Error in creating context\n");
- 
+
 	//Create a command-queue
 	clCommandQue = clCreateCommandQueue(clGPUContext, device_id, 0, &errcode);
 	if(errcode != CL_SUCCESS) printf("Error in creating command queue\n");
@@ -169,7 +169,7 @@ void cl_mem_init(DATA_TYPE POLYBENCH_2D(A,NI,NK,ni,nk), DATA_TYPE POLYBENCH_2D(B
 	a_mem_obj = clCreateBuffer(clGPUContext, CL_MEM_READ_WRITE, sizeof(DATA_TYPE) * NI * NK, NULL, &errcode);
 	b_mem_obj = clCreateBuffer(clGPUContext, CL_MEM_READ_WRITE, sizeof(DATA_TYPE) * NK * NJ, NULL, &errcode);
 	c_mem_obj = clCreateBuffer(clGPUContext, CL_MEM_READ_WRITE, sizeof(DATA_TYPE) * NI * NJ, NULL, &errcode);
-		
+
 	if(errcode != CL_SUCCESS) printf("Error in creating buffers\n");
 
 	errcode = clEnqueueWriteBuffer(clCommandQue, a_mem_obj, CL_TRUE, 0, sizeof(DATA_TYPE) * NI * NK, A, 0, NULL, NULL);
@@ -189,7 +189,7 @@ void cl_load_prog()
 	// Build the program
 	errcode = clBuildProgram(clProgram, 1, &device_id, NULL, NULL, NULL);
 	if(errcode != CL_SUCCESS) printf("Error in building program\n");
-		
+
 	// Create the OpenCL kernel
 	clKernel = clCreateKernel(clProgram, "gemm", &errcode);
 	if(errcode != CL_SUCCESS) printf("Error in creating kernel\n");
@@ -207,7 +207,7 @@ void cl_launch_kernel(int ni, int nj, int nk, DATA_TYPE alpha, DATA_TYPE beta)
 
 	/* Start timer. */
   	polybench_start_instruments;
-	
+
 	// Set the arguments of the kernel
 	errcode =  clSetKernelArg(clKernel, 0, sizeof(cl_mem), (void *)&a_mem_obj);
 	errcode |= clSetKernelArg(clKernel, 1, sizeof(cl_mem), (void *)&b_mem_obj);
@@ -217,7 +217,7 @@ void cl_launch_kernel(int ni, int nj, int nk, DATA_TYPE alpha, DATA_TYPE beta)
 	errcode |= clSetKernelArg(clKernel, 5, sizeof(int), (void *)&ni);
 	errcode |= clSetKernelArg(clKernel, 6, sizeof(int), (void *)&nj);
 	errcode |= clSetKernelArg(clKernel, 7, sizeof(int), (void *)&nk);
-	
+
 	if(errcode != CL_SUCCESS) printf("Error in seting arguments\n");
 
 	// Execute the OpenCL kernel
@@ -248,17 +248,17 @@ void cl_clean_up()
 }
 
 
-void gemm(int ni, int nj, int nk, DATA_TYPE alpha, DATA_TYPE beta, DATA_TYPE POLYBENCH_2D(A,NI,NK,ni,nk), 
+void gemm(int ni, int nj, int nk, DATA_TYPE alpha, DATA_TYPE beta, DATA_TYPE POLYBENCH_2D(A,NI,NK,ni,nk),
 	 DATA_TYPE POLYBENCH_2D(B,NK,NJ,nk,nj), DATA_TYPE POLYBENCH_2D(C,NI,NJ,ni,nj))
 {
 	int i,j,k;
-	
+
 	for (i = 0; i < _PB_NI; i++)
 	{
     		for (j = 0; j < _PB_NJ; j++)
     		{
 			C[i][j] *= beta;
-	
+
 			for (k = 0; k < _PB_NK; ++k)
 			{
 	  			C[i][j] += alpha * A[i][k] * B[k][j];
@@ -285,7 +285,7 @@ void print_array(int ni, int nj,
 }
 
 
-int main(void) 
+int main(void)
 {
 	/* Retrieve problem size. */
 	int ni = NI;
@@ -319,7 +319,7 @@ int main(void)
 	  	polybench_start_instruments;
 
 		gemm(ni, nj, nk, alpha, beta, POLYBENCH_ARRAY(A), POLYBENCH_ARRAY(B), POLYBENCH_ARRAY(C));
-	
+
 		/* Stop and print timer. */
 		printf("CPU Time in seconds:\n");
 	  	polybench_stop_instruments;
@@ -337,9 +337,9 @@ int main(void)
 	cl_clean_up();
 
 	POLYBENCH_FREE_ARRAY(A);
-	POLYBENCH_FREE_ARRAY(B);  
-	POLYBENCH_FREE_ARRAY(C);  
-	POLYBENCH_FREE_ARRAY(C_outputFromGpu); 
+	POLYBENCH_FREE_ARRAY(B);
+	POLYBENCH_FREE_ARRAY(C);
+	POLYBENCH_FREE_ARRAY(C_outputFromGpu);
 
 	return 0;
 }

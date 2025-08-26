@@ -24,7 +24,7 @@
 #define POLYBENCH_TIME 1
 
 //select the OpenCL device to use (can be GPU, CPU, or Accelerator such as Intel Xeon Phi)
-#define OPENCL_DEVICE_SELECTION CL_DEVICE_TYPE_GPU
+#define OPENCL_DEVICE_SELECTION CL_DEVICE_TYPE_CPU
 
 #include "covariance.h"
 #include "../../common/polybench.h"
@@ -50,7 +50,7 @@ DATA_TYPE float_n= 3214212.01;
 DATA_TYPE eps=  0.005;
 
 cl_platform_id platform_id;
-cl_device_id device_id;   
+cl_device_id device_id;
 cl_uint num_devices;
 cl_uint num_platforms;
 cl_int errcode;
@@ -84,7 +84,7 @@ void compareResults(int m, int n, DATA_TYPE POLYBENCH_2D(symmat,M,M,m,m), DATA_T
 			if (percentDiff(symmat[i][j], symmat_outputFromGpu[i][j]) > PERCENT_DIFF_ERROR_THRESHOLD)
 			{
 				fail++;
-			}			
+			}
 		}
 	}
 	printf("Non-Matching CPU-GPU Outputs Beyond Error Threshold of %4.2f Percent: %d\n", PERCENT_DIFF_ERROR_THRESHOLD, fail);
@@ -120,7 +120,7 @@ void init_arrays(int m, int n, DATA_TYPE POLYBENCH_2D(data,M,N,m,n))
 
 
 void cl_initialization()
-{	
+{
 	// Get platform and device information
 	errcode = clGetPlatformIDs(1, &platform_id, &num_platforms);
 	if(errcode == CL_SUCCESS) printf("number of platforms is %d\n",num_platforms);
@@ -141,11 +141,11 @@ void cl_initialization()
 	errcode = clGetDeviceInfo(device_id,CL_DEVICE_NAME, sizeof(str_temp), str_temp,NULL);
 	if(errcode == CL_SUCCESS) printf("device name is %s\n",str_temp);
 	else printf("Error getting device name\n");
-	
+
 	// Create an OpenCL context
 	clGPUContext = clCreateContext( NULL, 1, &device_id, NULL, NULL, &errcode);
 	if(errcode != CL_SUCCESS) printf("Error in creating context\n");
- 
+
 	//Create a command-queue
 	clCommandQue = clCreateCommandQueue(clGPUContext, device_id, 0, &errcode);
 	if(errcode != CL_SUCCESS) printf("Error in creating command queue\n");
@@ -157,7 +157,7 @@ void cl_mem_init(DATA_TYPE POLYBENCH_2D(data,M,N,m,n), DATA_TYPE POLYBENCH_2D(sy
 	data_mem_obj = clCreateBuffer(clGPUContext, CL_MEM_READ_WRITE, sizeof(DATA_TYPE) * M * N, NULL, &errcode);
 	symmat_mem_obj = clCreateBuffer(clGPUContext, CL_MEM_READ_WRITE, sizeof(DATA_TYPE) * M * N, NULL, &errcode);
 	mean_mem_obj = clCreateBuffer(clGPUContext, CL_MEM_READ_WRITE, sizeof(DATA_TYPE) * M, NULL, &errcode);
-		
+
 	if(errcode != CL_SUCCESS) printf("Error in creating buffers\n");
 
 	errcode = clEnqueueWriteBuffer(clCommandQue, data_mem_obj, CL_TRUE, 0, sizeof(DATA_TYPE) * M * N, data, 0, NULL, NULL);
@@ -166,7 +166,7 @@ void cl_mem_init(DATA_TYPE POLYBENCH_2D(data,M,N,m,n), DATA_TYPE POLYBENCH_2D(sy
 	if(errcode != CL_SUCCESS)printf("Error in writing buffers\n");
 }
 
- 
+
 void cl_load_prog()
 {
 	// Create a program from the kernel source
@@ -177,7 +177,7 @@ void cl_load_prog()
 	// Build the program
 	errcode = clBuildProgram(clProgram, 1, &device_id, NULL, NULL, NULL);
 	if(errcode != CL_SUCCESS) printf("Error in building program\n");
-		
+
 	// Create the OpenCL kernel
 	clKernel_mean = clCreateKernel(clProgram, "mean_kernel", &errcode);
 	if(errcode != CL_SUCCESS) printf("Error in creating kernel1\n");
@@ -187,7 +187,7 @@ void cl_load_prog()
 
 	clKernel_covar = clCreateKernel(clProgram, "covar_kernel", &errcode);
 	if(errcode != CL_SUCCESS) printf("Error in creating kernel3\n");
-	clFinish(clCommandQue);	
+	clFinish(clCommandQue);
 }
 
 
@@ -214,7 +214,7 @@ void cl_launch_kernel(int m, int n)
 
 	/* Start timer. */
   	polybench_start_instruments;
-	
+
 	// Set the arguments of the kernel
 	errcode =  clSetKernelArg(clKernel_mean, 0, sizeof(cl_mem), (void *)&mean_mem_obj);
 	errcode |= clSetKernelArg(clKernel_mean, 1, sizeof(cl_mem), (void *)&data_mem_obj);
@@ -222,13 +222,13 @@ void cl_launch_kernel(int m, int n)
 	errcode |= clSetKernelArg(clKernel_mean, 3, sizeof(int), (void *)&m);
 	errcode |= clSetKernelArg(clKernel_mean, 4, sizeof(int), (void *)&n);
 	if(errcode != CL_SUCCESS) printf("Error in seting arguments1\n");
-	
+
 	// Execute the OpenCL kernel
 	errcode = clEnqueueNDRangeKernel(clCommandQue, clKernel_mean, 1, NULL, globalWorkSize_Kernel1, localWorkSize_Kernel1, 0, NULL, NULL);
 	if(errcode != CL_SUCCESS) printf("Error in launching kernel1\n");
 	clEnqueueBarrier(clCommandQue);
 
-		
+
 	// Set the arguments of the kernel
 	errcode =  clSetKernelArg(clKernel_reduce, 0, sizeof(cl_mem), (void *)&mean_mem_obj);
 	errcode |= clSetKernelArg(clKernel_reduce, 1, sizeof(cl_mem), (void *)&data_mem_obj);
@@ -241,9 +241,9 @@ void cl_launch_kernel(int m, int n)
 	errcode = clEnqueueNDRangeKernel(clCommandQue, clKernel_reduce, 2, NULL, globalWorkSize_Kernel2, localWorkSize_Kernel2, 0, NULL, NULL);
 	if(errcode != CL_SUCCESS) printf("Error in launching kernel2\n");
 	clEnqueueBarrier(clCommandQue);
-	
+
 	// Set the arguments of the kernel
-	
+
 	errcode =  clSetKernelArg(clKernel_covar, 0, sizeof(cl_mem), (void *)&symmat_mem_obj);
 	errcode |= clSetKernelArg(clKernel_covar, 1, sizeof(cl_mem), (void *)&data_mem_obj);
 	errcode |= clSetKernelArg(clKernel_covar, 2, sizeof(int), (void *)&m);
@@ -339,18 +339,18 @@ void print_array(int m, DATA_TYPE POLYBENCH_2D(symmat,M,M,m,m))
 }
 
 
-int main(void) 
-{	
+int main(void)
+{
 	int m = M;
 	int n = N;
 
 	POLYBENCH_2D_ARRAY_DECL(data,DATA_TYPE,M,N,m,n);
 	POLYBENCH_2D_ARRAY_DECL(symmat,DATA_TYPE,M,M,m,m);
 	POLYBENCH_1D_ARRAY_DECL(mean,DATA_TYPE,M,m);
-	POLYBENCH_2D_ARRAY_DECL(symmat_outputFromGpu,DATA_TYPE,M,M,m,m);	
+	POLYBENCH_2D_ARRAY_DECL(symmat_outputFromGpu,DATA_TYPE,M,M,m,m);
 
 	init_arrays(m, n, POLYBENCH_ARRAY(data));
-    
+
 	read_cl_file();
 	cl_initialization();
 	cl_mem_init(POLYBENCH_ARRAY(data), POLYBENCH_ARRAY(symmat), POLYBENCH_ARRAY(mean));
@@ -359,7 +359,7 @@ int main(void)
 	cl_launch_kernel(m, n);
 
 	errcode = clEnqueueReadBuffer(clCommandQue, symmat_mem_obj, CL_TRUE, 0, M * N * sizeof(DATA_TYPE), POLYBENCH_ARRAY(symmat_outputFromGpu), 0, NULL, NULL);
-	if(errcode != CL_SUCCESS) printf("Error in reading GPU mem\n");   
+	if(errcode != CL_SUCCESS) printf("Error in reading GPU mem\n");
 
 	#ifdef RUN_ON_CPU
 
@@ -367,7 +367,7 @@ int main(void)
 	  	polybench_start_instruments;
 
 		covariance(m, n, POLYBENCH_ARRAY(data), POLYBENCH_ARRAY(symmat), POLYBENCH_ARRAY(mean));
-	
+
 		/* Stop and print timer. */
 		printf("CPU Time in seconds:\n");
 	  	polybench_stop_instruments;
@@ -383,12 +383,12 @@ int main(void)
 
 
 	cl_clean_up();
-	
+
 	POLYBENCH_FREE_ARRAY(data);
 	POLYBENCH_FREE_ARRAY(symmat);
 	POLYBENCH_FREE_ARRAY(mean);
-	POLYBENCH_FREE_ARRAY(symmat_outputFromGpu);	
-	
+	POLYBENCH_FREE_ARRAY(symmat_outputFromGpu);
+
 	return 0;
 }
 

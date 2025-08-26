@@ -16,7 +16,7 @@
 #define POLYBENCH_TIME 1
 
 //select the OpenCL device to use (can be GPU, CPU, or Accelerator such as Intel Xeon Phi)
-#define OPENCL_DEVICE_SELECTION CL_DEVICE_TYPE_GPU
+#define OPENCL_DEVICE_SELECTION CL_DEVICE_TYPE_CPU
 
 #include "jacobi2D.h"
 #include "../../common/polybench.h"
@@ -42,7 +42,7 @@
 char str_temp[1024];
 
 cl_platform_id platform_id;
-cl_device_id device_id;   
+cl_device_id device_id;
 cl_uint num_devices;
 cl_uint num_platforms;
 cl_int errcode;
@@ -64,25 +64,25 @@ size_t source_size;
 void compareResults(int n, DATA_TYPE POLYBENCH_2D(a,N,N,n,n), DATA_TYPE POLYBENCH_2D(a_outputFromGpu,N,N,n,n), DATA_TYPE POLYBENCH_2D(b,N,N,n,n), DATA_TYPE POLYBENCH_2D(b_outputFromGpu,N,N,n,n))
 {
 	int i, j, fail;
-	fail = 0;   
+	fail = 0;
 
 	// Compare output from CPU and GPU
-	for (i=0; i<n; i++) 
+	for (i=0; i<n; i++)
 	{
-		for (j=0; j<n; j++) 
+		for (j=0; j<n; j++)
 		{
-			if (percentDiff(a[i][j], a_outputFromGpu[i][j]) > PERCENT_DIFF_ERROR_THRESHOLD) 
+			if (percentDiff(a[i][j], a_outputFromGpu[i][j]) > PERCENT_DIFF_ERROR_THRESHOLD)
 			{
 				fail++;
 			}
         }
 	}
-  
-	for (i=0; i<n; i++) 
+
+	for (i=0; i<n; i++)
 	{
-       	for (j=0; j<n; j++) 
+       	for (j=0; j<n; j++)
 		{
-        		if (percentDiff(b[i][j], b_outputFromGpu[i][j]) > PERCENT_DIFF_ERROR_THRESHOLD) 
+        		if (percentDiff(b[i][j], b_outputFromGpu[i][j]) > PERCENT_DIFF_ERROR_THRESHOLD)
 			{
         			fail++;
         		}
@@ -140,11 +140,11 @@ void cl_initialization()
 
 	errcode = clGetDeviceInfo(device_id,CL_DEVICE_NAME, sizeof(str_temp), str_temp,NULL);
 	if(errcode == CL_SUCCESS) printf("device name is %s\n",str_temp);
-	
+
 	// Create an OpenCL context
 	clGPUContext = clCreateContext( NULL, 1, &device_id, NULL, NULL, &errcode);
 	if(errcode != CL_SUCCESS) printf("Error in creating context\n");
- 
+
 	//Create a command-queue
 	clCommandQue = clCreateCommandQueue(clGPUContext, device_id, 0, &errcode);
 	if(errcode != CL_SUCCESS) printf("Error in creating command queue\n");
@@ -155,7 +155,7 @@ void cl_mem_init(DATA_TYPE POLYBENCH_2D(A,N,N,n,n), DATA_TYPE POLYBENCH_2D(B,N,N
 {
 	a_mem_obj = clCreateBuffer(clGPUContext, CL_MEM_READ_WRITE, N * N * sizeof(DATA_TYPE), NULL, &errcode);
 	b_mem_obj = clCreateBuffer(clGPUContext, CL_MEM_READ_WRITE, N * N * sizeof(DATA_TYPE), NULL, &errcode);
-		
+
 	if(errcode != CL_SUCCESS) printf("Error in creating buffers\n");
 
 	errcode = clEnqueueWriteBuffer(clCommandQue, a_mem_obj, CL_TRUE, 0, N * N * sizeof(DATA_TYPE), A, 0, NULL, NULL);
@@ -174,7 +174,7 @@ void cl_load_prog()
 	// Build the program
 	errcode = clBuildProgram(clProgram, 1, &device_id, NULL, NULL, NULL);
 	if(errcode != CL_SUCCESS) printf("Error in building program\n");
-		
+
 	// Create the OpenCL kernel
 	clKernel1 = clCreateKernel(clProgram, "runJacobi2D_kernel1", &errcode);
 	if(errcode != CL_SUCCESS) printf("Error in creating kernel1\n");
@@ -190,7 +190,7 @@ void cl_launch_kernel1(int n)
 	localWorkSize[1] = DIM_LOCAL_WORK_GROUP_Y;
 	globalWorkSize[0] = N;
 	globalWorkSize[1] = N;
-	
+
 	// Set the arguments of the kernel
 	errcode =  clSetKernelArg(clKernel1, 0, sizeof(cl_mem), (void *)&a_mem_obj);
 	errcode |= clSetKernelArg(clKernel1, 1, sizeof(cl_mem), (void *)&b_mem_obj);
@@ -210,7 +210,7 @@ void cl_launch_kernel2(int n)
 	localWorkSize[1] = DIM_LOCAL_WORK_GROUP_Y;
 	globalWorkSize[0] = N;
 	globalWorkSize[1] = N;
-	
+
 	// Set the arguments of the kernel
 	errcode =  clSetKernelArg(clKernel2, 0, sizeof(cl_mem), (void *)&a_mem_obj);
 	errcode |= clSetKernelArg(clKernel2, 1, sizeof(cl_mem), (void *)&b_mem_obj);
@@ -231,9 +231,9 @@ void cl_launch_kernels()
 	globalWorkSize[0] = N;
 	globalWorkSize[1] = N;
 	int t;
-	
+
 	for (t = 0; t < TSTEPS ; t++)
-	{	
+	{
 		// Execute the OpenCL kernel
 		errcode = clEnqueueNDRangeKernel(clCommandQue, clKernel1, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, NULL);
 		if(errcode != CL_SUCCESS) printf("Error in launching kernel\n");
@@ -274,7 +274,7 @@ void runJacobi2DCpu(int tsteps, int n, DATA_TYPE POLYBENCH_2D(A,N,N,n,n), DATA_T
 	  			B[i][j] = 0.2f * (A[i][j] + A[i][(j-1)] + A[i][(1+j)] + A[(1+i)][j] + A[(i-1)][j]);
 			}
 		}
-		
+
     		for (i = 1; i < _PB_N-1; i++)
 		{
 			for (j = 1; j < _PB_N-1; j++)
@@ -304,7 +304,7 @@ void print_array(int n,
 }
 
 
-int main(void) 
+int main(void)
 {
 	/* Retrieve problem size. */
 	int n = N;
@@ -321,7 +321,7 @@ int main(void)
 	cl_initialization();
 	cl_mem_init(POLYBENCH_ARRAY(a), POLYBENCH_ARRAY(b));
 	cl_load_prog();
-	
+
 	/* Start timer. */
   	polybench_start_instruments;
 
@@ -337,20 +337,20 @@ int main(void)
 	printf("GPU Time in seconds:\n");
   	polybench_stop_instruments;
  	polybench_print_instruments;
-	
+
 	errcode = clEnqueueReadBuffer(clCommandQue, a_mem_obj, CL_TRUE, 0, N * N * sizeof(DATA_TYPE), POLYBENCH_ARRAY(a_outputFromGpu), 0, NULL, NULL);
 	errcode = clEnqueueReadBuffer(clCommandQue, b_mem_obj, CL_TRUE, 0, N * N * sizeof(DATA_TYPE), POLYBENCH_ARRAY(b_outputFromGpu), 0, NULL, NULL);
-	
+
 	if(errcode != CL_SUCCESS) printf("Error in reading GPU mem\n");
 
 
 	#ifdef RUN_ON_CPU
-		
+
 		/* Start timer. */
 	  	polybench_start_instruments;
 
 		runJacobi2DCpu(tsteps, n, POLYBENCH_ARRAY(a), POLYBENCH_ARRAY(b));
-	
+
 		/* Stop and print timer. */
 		printf("CPU Time in seconds:\n");
 	  	polybench_stop_instruments;
@@ -370,7 +370,7 @@ int main(void)
 	POLYBENCH_FREE_ARRAY(a_outputFromGpu);
 	POLYBENCH_FREE_ARRAY(b);
 	POLYBENCH_FREE_ARRAY(b_outputFromGpu);
-    
+
 	return 0;
 }
 
