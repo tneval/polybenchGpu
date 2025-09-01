@@ -6,4 +6,4 @@ all:
 	gcc -O3 ${CFILES} ${LIB}
 
 clean:
-	rm -f *~ *.exe
+	rm -f *~ *.out
