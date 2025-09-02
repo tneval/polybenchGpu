@@ -57,7 +57,7 @@ FILE *fp;
 char *source_str;
 size_t source_size;
 
-#define RUN_ON_CPU
+//#define RUN_ON_CPU
 
 
 void read_cl_file()

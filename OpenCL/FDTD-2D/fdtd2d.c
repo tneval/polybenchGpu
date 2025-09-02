@@ -66,7 +66,7 @@ FILE *fp;
 char *source_str;
 size_t source_size;
 
-#define RUN_ON_CPU
+//#define RUN_ON_CPU
 
 
 void compareResults(DATA_TYPE POLYBENCH_2D(hz1,NX,NY,nx,ny), DATA_TYPE POLYBENCH_2D(hz2,NX,NY,nx,ny))

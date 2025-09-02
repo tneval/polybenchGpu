@@ -69,7 +69,7 @@ FILE *fp;
 char *source_str;
 size_t source_size;
 
-#define RUN_ON_CPU
+//#define RUN_ON_CPU
 
 
 void compareResults(int m, int n, DATA_TYPE POLYBENCH_2D(symmat,M,M,m,m), DATA_TYPE POLYBENCH_2D(symmat_outputFromGpu,M,M,m,m))
